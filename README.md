@@ -1,30 +1,129 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/zeit/next.js/tree/canary/packages/create-next-app).
+# Nextjs と Typescript で React-StyleGuidist を使うための設定
 
-## Getting Started
 
-First, run the development server:
+## Nextjs プロジェクトの作成
 
-```bash
-npm run dev
-# or
-yarn dev
+```
+create-next-app [prject-name]
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```
+cd [project-name]
 
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
+mkdir src
+mv pages src/
+mkdir src/components
+mkdir src/styleguide
+```
 
-## Learn More
+## 必要なパッケージのインストール
 
-To learn more about Next.js, take a look at the following resources:
+```
+# NextjsでTypeScriptを使うためのパッケージ
+yarn add -D @types/node typescript @types/react
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# React-StyleguidistをNextjs,TypeScriptと一緒に使うためのパッケージ
+yarn add -D react-styleguidist babel-loader react-docgen-typescript
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/zeit/next.js/) - your feedback and contributions are welcome!
 
-## Deploy on ZEIT Now
 
-The easiest way to deploy your Next.js app is to use the [ZEIT Now Platform](https://zeit.co/import?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## styleguide.config.js の設定
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+```js
+module.exports = {
+  components: "./src/components/**/*.tsx",
+  propsParser: require("react-docgen-typescript").withCustomConfig(
+    "./tsconfig.json"
+  ).parse,
+  webpackConfig: {
+    module: {
+      rules: [
+        {
+          test: /\.tsx?$/,
+          exclude: /node_modules/,
+          loader: "babel-loader",
+        },
+      ],
+    },
+  },
+};
+```
+
+## babel.config.js の設定
+
+```js
+module.exports = {
+  presets: ["next/babel"],
+  plugins: [],
+};
+```
+
+## package.jsonの設定
+
+```json
+"scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "styleguide": "styleguidist server",
+    "styleguide:build": "styleguidist build"
+  },
+```
+
+
+## 補足）Bootstrapのスタイルを適用する方法
+
+### Bootstrapのインストール
+
+```
+yarn add bootstrap jquery popper.js
+```
+
+### styleguide.config.jsの設定
+
+```js
+const path = require("path");
+
+module.exports = {
+  components: "./src/components/**/*.tsx",
+  propsParser: require("react-docgen-typescript").withCustomConfig(
+    "./tsconfig.json"
+  ).parse,
+  styleguideComponents: {
+    // ADD: Wrapperコンポーネントをスタイルガイド用に定義する
+    Wrapper: path.resolve(__dirname, "src/styleguide/Wrapper.tsx"),
+  },
+  webpackConfig: {
+    module: {
+      rules: [
+        {
+          test: /\.tsx?$/,
+          exclude: /node_modules/,
+          loader: "babel-loader",
+        },
+        // ADD: style-loaderとcss-loaderを追加する。
+        {
+          test: /\.css?$/,
+          use: ["style-loader", "css-loader"],
+        },
+      ],
+    },
+  },
+};
+```
+
+### src/styleguide/Wrapper.tsxの設定
+
+
+```tsx
+import React from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap";
+
+const Wrapper: React.FC = ({ children }) => {
+  return <div>{children}</div>;
+};
+
+export default Wrapper;
+```
